@@ -6,7 +6,7 @@ This folder makes the modified Oracle checkout usable from another Windows Codex
 
 - Builds this local modified Oracle checkout.
 - Links the `oracle` command to this checkout with `npm link`.
-- Copies `skills/oracle` into `%USERPROFILE%\.codex\skills\oracle`.
+- Replaces `%USERPROFILE%\.codex\skills\oracle` with this repo's `skills/oracle`.
 - Appends the Oracle routing guardrail to `%USERPROFILE%\.codex\AGENTS.md`.
 - Creates `%USERPROFILE%\.oracle\config.json` for browser mode.
 

@@ -72,6 +72,12 @@ $CodexSkillsDir = Join-Path $HomeDir ".codex\skills"
 $TargetSkillDir = Join-Path $CodexSkillsDir "oracle"
 $SourceSkillDir = Join-Path $RepoRoot "skills\oracle"
 Ensure-Directory $CodexSkillsDir
+if (-not (Test-Path -LiteralPath $SourceSkillDir)) {
+  throw "Oracle skill source was not found: $SourceSkillDir"
+}
+if (Test-Path -LiteralPath $TargetSkillDir) {
+  Remove-Item -LiteralPath $TargetSkillDir -Recurse -Force
+}
 Ensure-Directory $TargetSkillDir
 Get-ChildItem -LiteralPath $SourceSkillDir -Force | ForEach-Object {
   Copy-Item -LiteralPath $_.FullName -Destination $TargetSkillDir -Recurse -Force
@@ -89,6 +95,11 @@ $agentsText = Get-Content -LiteralPath $AgentsPath -Raw -Encoding UTF8
 if ($agentsText -notmatch "Oracle OSS GPT routing guardrail") {
   $appendText = Get-Content -LiteralPath $AppendPath -Raw -Encoding UTF8
   Add-Content -LiteralPath $AgentsPath -Value "`r`n$appendText" -Encoding UTF8
+  $agentsText = Get-Content -LiteralPath $AgentsPath -Raw -Encoding UTF8
+}
+$completionGuardrail = "- Never click ChatGPT's stop control while Oracle is waiting for an answer. If a ChatGPT answer looks frozen or too short, wait longer or refresh/reload and re-read the same conversation; do not send an extra follow-up/question as recovery."
+if ($agentsText -notmatch "Never click ChatGPT's stop") {
+  Add-Content -LiteralPath $AgentsPath -Value $completionGuardrail -Encoding UTF8
 }
 
 Write-Step "Writing Oracle global config"
@@ -141,8 +152,14 @@ elseif ($ProjectPath -or $ConversationUrl) {
 }
 
 Write-Step "Verifying oracle command"
-& oracle --dry-run summary --files-report -p "setup smoke test; do not send" --file (Join-Path $RepoRoot "README.md") | Select-Object -First 12
-if ($LASTEXITCODE -ne 0) { throw "oracle verification failed." }
+Push-Location $HomeDir
+try {
+  & oracle --dry-run summary --files-report -p "setup smoke test; do not send" --file (Join-Path $RepoRoot "README.md") | Select-Object -First 12
+  if ($LASTEXITCODE -ne 0) { throw "oracle verification failed." }
+}
+finally {
+  Pop-Location
+}
 
 Write-Host ""
 Write-Host "Oracle Codex setup complete." -ForegroundColor Green
