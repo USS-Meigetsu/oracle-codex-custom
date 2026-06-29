@@ -14,7 +14,7 @@ It does not copy browser cookies, ChatGPT sessions, passwords, API keys, or `%US
 
 ## Use From Another PC
 
-After cloning the private repo:
+After cloning the public repo:
 
 ```powershell
 cd $env:USERPROFILE\source\repos\oracle
@@ -40,3 +40,4 @@ Use a different ChatGPT conversation URL for a different project.
 - Do not run `npx -y @steipete/oracle` for normal Codex use; it can bypass this modified checkout.
 - Do not commit `.oracle/`, browser profiles, cookies, `.env`, or API keys.
 - Do not reuse one project's ChatGPT conversation for a different project unless that is intentional.
+- Do not click ChatGPT's stop/回答停止 button or send extra follow-up questions when an answer looks frozen or too short. Wait, refresh/reload, and re-read the same conversation instead.

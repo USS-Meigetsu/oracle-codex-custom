@@ -105,6 +105,11 @@ does not silently post into a new chat. Model selection still runs before
 submission unless `browser.modelStrategy`/`--browser-model-strategy` is set to
 `current` or `ignore`.
 
+If a resumed ChatGPT conversation appears frozen or the latest answer looks too
+short, treat it as possibly still generating. Wait longer or reload/re-read the
+same conversation; do not press ChatGPT's stop button or send a follow-up as
+recovery.
+
 Project configs intentionally support only workflow defaults. They cannot set
 provider routing or secret/executable fields such as `apiBaseUrl`, `azure`,
 `browser.remoteHost`, `browser.remoteToken`, `browser.chromePath`, or
@@ -149,6 +154,7 @@ Under the hood, pruning removes entire session directories (metadata + logs). Th
 
 - `--followup <sessionId|responseId>` continues a saved ChatGPT browser conversation or an OpenAI/Azure Responses API run. Browser followup reopens the exact conversation and inherits the parent's browser profile, configuration, and model; API followup accepts a stored Oracle session id or a `resp_...` Responses API id.
 - For multi-model OpenAI/Azure parent sessions, add `--followup-model <model>` to choose which parent model response to chain from.
+- Browser follow-ups are for planned additional turns after the previous answer is complete. They must not be used to interrupt, continue, or recover a still-generating, frozen-looking, or suspiciously short answer.
 - Gemini/Claude API runs and custom `--base-url` providers are intentionally excluded because Oracle cannot preserve `previous_response_id` through those adapters.
 - If the session id is wrong, Oracle now prints actionable guidance and suggests close matches from local session history.
 

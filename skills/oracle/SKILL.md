@@ -17,6 +17,7 @@ Recommended defaults:
 - Model: GPT‑5.5 Pro (either `--model gpt-5.5-pro` or a ChatGPT picker label like `--model "5.5 Pro"`)
 - Attachments: directories/globs + excludes; avoid secrets.
 - Local policy: prefer the modified local Oracle browser workflow for GPT/ChatGPT second opinions. Do not use API mode unless the user explicitly asks for API or browser mode is blocked.
+- CLI policy: use the installed local `oracle` command from the modified checkout. Do not use `npx -y @steipete/oracle` for normal runs because that can bypass local changes.
 - Existing-chat policy: use project-specific `.oracle/config.json` `browser.conversationUrl` or `--chatgpt-conversation-url` when preserving context matters. Do not reuse one project's conversation URL for another project.
 - Model policy: if the user names a model, pass it with `--model <name>` and use `--browser-model-strategy select` by default. Existing conversation reuse still honors model selection before submitting the prompt.
 
@@ -27,32 +28,39 @@ Recommended defaults:
 3. Run in browser mode for the usual GPT‑5.5 Pro ChatGPT workflow; use API only when you explicitly want it.
 4. If the run detaches/timeouts: reattach to the stored session (don’t re-run).
 
+## ChatGPT completion safety
+
+- Never click ChatGPT's "Stop generating", "Stop responding", or Japanese "回答を停止" control during Oracle waits or recovery. Treat that control as evidence the answer may still be in progress.
+- Do not send `--browser-follow-up` prompts, manual follow-ups, "continue?" prompts, or extra questions while the current answer may still be generating, frozen-looking, or suspiciously short.
+- If the page appears stuck, first wait longer. If it still looks stale, refresh/reload the page and re-read the latest assistant response in the same conversation.
+- Use browser follow-ups only when the user explicitly requested a planned multi-turn consult and only after the previous answer is verified complete.
+
 ## Commands (preferred)
 
 - Show help (once/session):
-  - `npx -y @steipete/oracle --help`
+  - `oracle --help`
 
 - Preview (no tokens):
-  - `npx -y @steipete/oracle --dry-run summary -p "<task>" --file "src/**" --file "!**/*.test.*"`
-  - `npx -y @steipete/oracle --dry-run full -p "<task>" --file "src/**"`
+  - `oracle --dry-run summary -p "<task>" --file "src/**" --file "!**/*.test.*"`
+  - `oracle --dry-run full -p "<task>" --file "src/**"`
 
 - Token/cost sanity:
-  - `npx -y @steipete/oracle --dry-run summary --files-report -p "<task>" --file "src/**"`
+  - `oracle --dry-run summary --files-report -p "<task>" --file "src/**"`
 
 - Startup/perf trace:
-  - `npx -y @steipete/oracle --perf-trace --perf-trace-path /tmp/oracle-perf.json --dry-run summary -p "<task>" --file "src/**"`
+  - `oracle --perf-trace --perf-trace-path /tmp/oracle-perf.json --dry-run summary -p "<task>" --file "src/**"`
   - Use when CLI startup or time-to-first-output feels slow; inspect `first-output` and `exit`.
 
 - Browser run (main path; long-running is normal):
-  - `npx -y @steipete/oracle --engine browser --model gpt-5.5-pro -p "<task>" --file "src/**"`
+  - `oracle --engine browser --model gpt-5.5-pro -p "<task>" --file "src/**"`
 
 - Browser run that reuses a project-specific ChatGPT conversation:
-  - `npx -y @steipete/oracle --engine browser --chatgpt-conversation-url "https://chatgpt.com/c/<thread-id>" -p "<task>" --file "src/**"`
+  - `oracle --engine browser --chatgpt-conversation-url "https://chatgpt.com/c/<thread-id>" -p "<task>" --file "src/**"`
   - Prefer this when the user wants to preserve an existing ChatGPT thread's context. Use a different conversation URL per project. Oracle verifies prior turns before submitting and fails closed rather than silently creating a fresh chat.
 
-- Manual paste fallback (assemble bundle, copy to clipboard):
-  - `npx -y @steipete/oracle --render --copy -p "<task>" --file "src/**"`
-  - Note: `--copy` is a hidden alias for `--copy-markdown`.
+- Preview bundle only (not a GPT submission route):
+  - `oracle --render -p "<task>" --file "src/**"`
+  - Use this only to inspect the assembled prompt. Submit through Oracle browser mode unless the user explicitly asks for manual copy/paste.
 
 ## Attaching files (`--file`)
 
@@ -78,7 +86,7 @@ Recommended defaults:
 - Target: keep total input under ~196k tokens.
 - Use `--files-report` (and/or `--dry-run json`) to spot the token hogs before spending.
 - Use `--perf-trace` / `ORACLE_PERF_TRACE=1` for startup and first-output timing. Traces redact prompts, tokens, keys, cookies, and inline cookie payloads; detached API children write a session-suffixed sidecar trace.
-- If you need hidden/advanced knobs: `npx -y @steipete/oracle --help --verbose`.
+- If you need hidden/advanced knobs: `oracle --help --verbose`.
 
 ## Engines (API vs browser)
 

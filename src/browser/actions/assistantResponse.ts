@@ -717,13 +717,14 @@ function buildResponseObserverExpression(
       ? JSON.stringify(expectedConversationId.trim())
       : "null";
   return `(() => {
-    ${buildClickDispatcher()}
     const SELECTORS = ${selectorsLiteral};
     const STOP_SELECTOR = '${STOP_BUTTON_SELECTOR}';
     const FINISHED_SELECTOR = '${FINISHED_ACTIONS_SELECTOR}';
     const CONVERSATION_SELECTOR = ${conversationLiteral};
     const ASSISTANT_SELECTOR = ${assistantLiteral};
     const EXPECTED_CONVERSATION_ID = ${expectedConversationLiteral};
+    // The stop button is a liveness signal only. Never click it while waiting
+    // for an answer; if it is visible, ChatGPT may still be generating.
     // Learned: settling avoids capturing mid-stream HTML; keep short.
     const settleDelayMs = 800;
     const currentConversationId = () => {
@@ -777,7 +778,6 @@ function buildResponseObserverExpression(
     const captureViaObserver = () =>
       new Promise((resolve, reject) => {
         const deadline = Date.now() + ${timeoutMs};
-        let stopInterval = null;
         let timeoutId = null;
         let cleanedUp = false;
         let observer = null;
@@ -786,10 +786,6 @@ function buildResponseObserverExpression(
         const cleanup = () => {
           if (cleanedUp) return;
           cleanedUp = true;
-          if (stopInterval) {
-            clearInterval(stopInterval);
-            stopInterval = null;
-          }
           if (timeoutId) {
             clearTimeout(timeoutId);
             timeoutId = null;
@@ -840,20 +836,6 @@ function buildResponseObserverExpression(
 
         observer = new MutationObserver(observerCallback);
         observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-
-        stopInterval = setInterval(() => {
-          if (cleanedUp) return;
-          const stop = document.querySelector(STOP_SELECTOR);
-          if (!stop) {
-            return;
-          }
-          const isStopButton =
-            stop.getAttribute('data-testid') === 'stop-button' || stop.getAttribute('aria-label')?.toLowerCase()?.includes('stop');
-          if (isStopButton) {
-            return;
-          }
-          dispatchClickSequence(stop);
-        }, 500);
 
         timeoutId = setTimeout(() => {
           cleanup();
@@ -930,6 +912,8 @@ function buildResponseObserverExpression(
         const stopVisible = Boolean(document.querySelector(STOP_SELECTOR));
         const finishedVisible = isLastAssistantTurnFinished();
 
+        // Stop visible means the answer is still in progress; wait for either
+        // completion UI or a stable response after the stop control disappears.
         if (finishedVisible || (!stopVisible && stableCycles >= stableTarget)) {
           break;
         }

@@ -904,6 +904,9 @@ describe("waitForAssistantResponse", () => {
     expect(capturedExpression).not.toContain("document.querySelectorAll('.markdown')");
     expect(capturedExpression).toContain("data-message-author-role");
     expect(capturedExpression).toContain("role === 'assistant'");
+    expect(capturedExpression).toContain("The stop button is a liveness signal only");
+    expect(capturedExpression).not.toContain("dispatchClickSequence(stop)");
+    expect(capturedExpression).not.toContain("let stopInterval");
   });
 
   test("falls back to snapshot when observer fails", async () => {

@@ -813,7 +813,7 @@ program
   .addOption(
     new Option(
       "--browser-follow-up <prompt>",
-      "Submit an additional prompt in the same ChatGPT browser conversation after the initial answer; repeat for multi-turn consults.",
+      "Submit a planned extra prompt in the same ChatGPT browser conversation after the previous answer is complete; never use this to interrupt or recover a still-generating answer.",
     )
       .argParser(collectTextValues)
       .default([]),

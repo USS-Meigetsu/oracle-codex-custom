@@ -291,6 +291,7 @@ describe("summarizeModelRunsForConsult", () => {
     expect(resolved.guidance.join("\n")).toContain("private Chrome profile");
     expect(resolved.guidance.join("\n")).toContain("--browser-keep-browser");
     expect(resolved.guidance.join("\n")).toContain("image-aware wait/download");
+    expect(resolved.guidance.join("\n")).toContain("previous answer completes");
     expect(formatConsultDryRunResolved(resolved).join("\n")).toContain(
       "browser thinking time: extended",
     );

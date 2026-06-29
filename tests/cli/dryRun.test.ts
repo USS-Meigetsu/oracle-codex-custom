@@ -124,6 +124,10 @@ describe("runDryRunSummary", () => {
     expect(
       log.mock.calls.some(([entry]) => String(entry).includes("Multi-turn is explicit only")),
     ).toBe(true);
+    expect(
+      log.mock.calls.some(([entry]) => String(entry).includes("after completed answers")),
+    ).toBe(true);
+    expect(log.mock.calls.some(([entry]) => String(entry).includes("still-generating"))).toBe(true);
   });
 
   test("rejects browser follow-ups with Deep Research during dry-run", async () => {

@@ -248,7 +248,7 @@ function logBrowserFollowUpSummary(
     log(chalk.bold(`[${label}] Browser follow-ups: ${count} additional prompt(s).`));
     log(
       chalk.dim(
-        `[${label}] Multi-turn is explicit only: Oracle will send these prompts in order, but it never invents follow-ups automatically.`,
+        `[${label}] Multi-turn is explicit only: Oracle sends these prompts after completed answers; it never invents follow-ups or uses them to recover still-generating output.`,
       ),
     );
   }
