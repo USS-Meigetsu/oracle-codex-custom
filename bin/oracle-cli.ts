@@ -127,6 +127,8 @@ interface CliOptions extends OptionValues {
   browserAttachRunning?: boolean;
   chatgptUrl?: string;
   browserUrl?: string;
+  chatgptConversationUrl?: string;
+  browserConversationUrl?: string;
   browserTimeout?: string;
   browserInputTimeout?: string;
   browserAttachmentTimeout?: string;
@@ -638,6 +640,18 @@ program
     new Option(
       "--browser-url <url>",
       `Alias for --chatgpt-url (default ${CHATGPT_URL}).`,
+    ).hideHelp(),
+  )
+  .addOption(
+    new Option(
+      "--chatgpt-conversation-url <url>",
+      "Resume an existing ChatGPT conversation URL (/c/<id>) instead of starting a new browser chat.",
+    ),
+  )
+  .addOption(
+    new Option(
+      "--browser-conversation-url <url>",
+      "Alias for --chatgpt-conversation-url.",
     ).hideHelp(),
   )
   .addOption(
@@ -2701,6 +2715,10 @@ function printDebugHelp(cliName: string): void {
   console.log(chalk.bold("Browser Options"));
   printDebugOptionGroup([
     ["--chatgpt-url <url>", "Override the ChatGPT web URL (workspace/folder targets)."],
+    [
+      "--chatgpt-conversation-url <url>",
+      "Resume an existing ChatGPT conversation URL (/c/<id>) for browser mode.",
+    ],
     ["--browser-chrome-profile <name>", "Reuse cookies from a specific Chrome profile."],
     ["--browser-chrome-path <path>", "Point to a custom Chrome/Chromium binary."],
     ["--browser-cookie-path <path>", "Use a specific Chrome/Chromium cookie store file."],
@@ -2709,6 +2727,7 @@ function printDebugHelp(cliName: string): void {
       "Attach to your current Chrome session through its local remote debugging toggle.",
     ],
     ["--browser-url <url>", "Alias for --chatgpt-url."],
+    ["--browser-conversation-url <url>", "Alias for --chatgpt-conversation-url."],
     ["--browser-timeout <ms|s|m>", "Cap total wait time for the assistant response."],
     ["--browser-input-timeout <ms|s|m>", "Cap how long we wait for the composer textarea."],
     [

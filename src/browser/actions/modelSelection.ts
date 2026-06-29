@@ -199,6 +199,10 @@ function buildModelSelectionExpression(
       }
       return value
         .toLowerCase()
+        .replace(/\u6700\u901f/g, ' instant ')
+        .replace(/\u6a19\u6e96/g, ' medium ')
+        .replace(/\u6700\u9ad8/g, ' extra high ')
+        .replace(/\u9ad8/g, ' high ')
         .replace(/[^a-z0-9]+/g, ' ')
         .replace(/\\s+/g, ' ')
         .trim();
@@ -226,6 +230,8 @@ function buildModelSelectionExpression(
     const wantsPro = normalizedTarget.includes(' pro') || normalizedTarget.endsWith(' pro') || normalizedTokens.includes('pro');
     const wantsInstant = normalizedTarget.includes('instant');
     const wantsThinking = normalizedTarget.includes('thinking');
+    const wantsGpt55Base =
+      desiredVersion === '5-5' && !wantsPro && !wantsInstant && !wantsThinking;
     const targetUsesCurrentGpt55Alias =
       desiredVersion === '5-5' || normalizedTarget === 'pro' || normalizedTarget === 'chatgpt pro';
     const labelHasProWord = (label) => label === 'pro' || label.startsWith('pro ') || label.includes(' pro ') || label.endsWith(' pro');
@@ -350,6 +356,10 @@ function buildModelSelectionExpression(
       if (normalized === '5 2' || normalized === 'gpt 5 2') return 'GPT-5.2';
       if (normalized === '5 1' || normalized === 'gpt 5 1') return 'GPT-5.1';
       if (normalized === '5 0' || normalized === 'gpt 5 0') return 'GPT-5.0';
+      if (normalized === 'extra high') return 'Extra High';
+      if (normalized === 'high') return 'High';
+      if (normalized === 'medium') return 'Medium';
+      if (normalized === 'instant') return 'Instant';
       return label || '';
     };
     const withProPillSignal = (label) => {
@@ -457,6 +467,14 @@ function buildModelSelectionExpression(
       if (!normalizedLabel) return false;
       if (wantsThinking && !wantsPro && hasProComposerPill()) return false;
       if (isTargetGpt55VisibleAlias(normalizedLabel)) return true;
+      if (
+        wantsGpt55Base &&
+        !hasProComposerPill() &&
+        (isNonProIntelligenceThinkingLabel(normalizedLabel) ||
+          versionFromLabel(normalizedLabel) === '5-5')
+      ) {
+        return true;
+      }
       if (
         wantsThinking &&
         desiredVersion === '5-5' &&
@@ -698,10 +716,14 @@ function buildModelSelectionExpression(
       const candidateIsNonProThinkingEffort =
         isNonProIntelligenceThinkingLabel(normalizedText) && !normalizedTestId.includes('pro');
       const hasActiveProPill = hasProComposerPill();
+      const candidateIsGpt55BaseEffort =
+        wantsGpt55Base && candidateIsNonProThinkingEffort;
       const candidateIsNonProGpt55Thinking =
         wantsThinking && desiredVersion === '5-5' && candidateIsNonProThinkingEffort;
       const candidateClearsProForThinking =
         wantsThinking && !wantsPro && hasActiveProPill && candidateIsNonProThinkingEffort;
+      const candidateClearsProForGpt55Base =
+        wantsGpt55Base && hasActiveProPill && candidateIsNonProThinkingEffort;
       const candidateOpensVersionSubmenu =
         wantsThinking &&
         desiredVersion !== '5-5' &&
@@ -755,6 +777,7 @@ function buildModelSelectionExpression(
       if (wantsPro && candidateHasThinking) return 0;
       if (wantsPro && candidateHasLegacyProVersion && !candidateSelectsDesiredVersion) return 0;
       if (wantsPro && !candidateHasPro && !candidateSelectsDesiredVersion) return 0;
+      if (wantsGpt55Base && candidateHasPro) return 0;
       if (
         wantsInstant &&
         !candidateHasInstant &&
@@ -793,7 +816,13 @@ function buildModelSelectionExpression(
       if (candidateIsNonProGpt55Thinking) {
         score += scoreNonProGpt55ThinkingLabel(normalizedText);
       }
+      if (candidateIsGpt55BaseEffort) {
+        score += scoreNonProGpt55ThinkingLabel(normalizedText);
+      }
       if (candidateClearsProForThinking) {
+        score += scoreNonProGpt55ThinkingLabel(normalizedText) + 600;
+      }
+      if (candidateClearsProForGpt55Base) {
         score += scoreNonProGpt55ThinkingLabel(normalizedText) + 600;
       }
       if (

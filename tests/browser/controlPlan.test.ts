@@ -51,4 +51,14 @@ describe("browser control plan", () => {
     expect(output).toContain("reuses the matching ChatGPT tab (current)");
     expect(output).not.toContain("opens a dedicated tab");
   });
+
+  test("mentions configured conversation resume in browser guidance", () => {
+    const plan = describeBrowserControlPlan({
+      resumeConversationUrl: "https://chatgpt.com/c/project-thread",
+    });
+    const output = formatBrowserControlPlan(plan, "preview").join("\n");
+
+    expect(output).toContain("existing ChatGPT conversation");
+    expect(output).toContain("verifies prior turns");
+  });
 });

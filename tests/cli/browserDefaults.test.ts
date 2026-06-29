@@ -47,6 +47,34 @@ describe("applyBrowserDefaultsFromConfig", () => {
     expect(options.chatgptUrl).toBe("https://chatgpt.com/g/g-p-bar/project");
   });
 
+  test("applies conversation URL defaults when CLI flags are absent", () => {
+    const options: BrowserDefaultsOptions = {};
+    const config: UserConfig = {
+      browser: {
+        conversationUrl: "https://chatgpt.com/c/project-thread",
+      },
+    };
+
+    applyBrowserDefaultsFromConfig(options, config, source);
+
+    expect(options.chatgptConversationUrl).toBe("https://chatgpt.com/c/project-thread");
+  });
+
+  test("does not override when CLI provided conversation URL", () => {
+    const options: BrowserDefaultsOptions = {
+      chatgptConversationUrl: "https://chatgpt.com/c/cli-thread",
+    };
+    const config: UserConfig = {
+      browser: {
+        conversationUrl: "https://chatgpt.com/c/config-thread",
+      },
+    };
+
+    applyBrowserDefaultsFromConfig(options, config, source);
+
+    expect(options.chatgptConversationUrl).toBe("https://chatgpt.com/c/cli-thread");
+  });
+
   test("applies chrome defaults when CLI flags are untouched or defaulted", () => {
     const options: BrowserDefaultsOptions = {};
     const config: UserConfig = {

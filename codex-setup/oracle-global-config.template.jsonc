@@ -1,0 +1,16 @@
+{
+  // Default to the modified local Oracle browser workflow.
+  // API runs should be explicit, not accidental.
+  "engine": "browser",
+  "model": "gpt-5.5-pro",
+  "filesReport": true,
+  "browser": {
+    "manualLogin": true,
+    "manualLoginProfileDir": "%USERPROFILE%\\.oracle\\browser-profile",
+    "modelStrategy": "select",
+    "archiveConversations": "never",
+    "attachmentTimeoutMs": 180000,
+    "inputTimeoutMs": 120000,
+    "timeoutMs": 480000,
+  },
+}

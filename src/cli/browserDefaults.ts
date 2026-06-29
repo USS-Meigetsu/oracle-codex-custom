@@ -1,4 +1,5 @@
 import { CHATGPT_URL } from "../browser/constants.js";
+import { isRecoverableChatGptConversationUrl } from "../browser/reattachability.js";
 import { normalizeChatgptUrl } from "../browser/utils.js";
 import type { UserConfig } from "../config.js";
 import { normalizeThinkingTimeLevel } from "../oracle/thinkingTime.js";
@@ -12,6 +13,8 @@ import type {
 export interface BrowserDefaultsOptions {
   chatgptUrl?: string;
   browserUrl?: string;
+  chatgptConversationUrl?: string;
+  browserConversationUrl?: string;
   browserChromeProfile?: string;
   browserChromePath?: string;
   browserCookiePath?: string;
@@ -62,6 +65,16 @@ export function applyBrowserDefaultsFromConfig(
   const cliChatgptSet = options.chatgptUrl !== undefined || options.browserUrl !== undefined;
   if (isUnset("chatgptUrl") && !cliChatgptSet && configuredChatgptUrl !== undefined) {
     options.chatgptUrl = normalizeChatgptUrl(configuredChatgptUrl ?? "", CHATGPT_URL);
+  }
+  const configuredConversationUrl = browser.conversationUrl ?? browser.resumeConversationUrl;
+  const cliConversationSet =
+    options.chatgptConversationUrl !== undefined || options.browserConversationUrl !== undefined;
+  if (
+    isUnset("chatgptConversationUrl") &&
+    !cliConversationSet &&
+    configuredConversationUrl !== undefined
+  ) {
+    options.chatgptConversationUrl = normalizeConversationUrl(configuredConversationUrl);
   }
 
   if (
@@ -168,4 +181,17 @@ export function applyBrowserDefaultsFromConfig(
   ) {
     options.browserManualLoginProfileDir = browser.manualLoginProfileDir;
   }
+}
+
+function normalizeConversationUrl(raw: string | null): string | undefined {
+  if (raw === null) {
+    return undefined;
+  }
+  const normalized = normalizeChatgptUrl(raw, "");
+  if (!isRecoverableChatGptConversationUrl(normalized)) {
+    throw new Error(
+      `Invalid ChatGPT conversation URL: ${raw}. Expected https://chatgpt.com/c/<conversation-id>.`,
+    );
+  }
+  return normalized;
 }

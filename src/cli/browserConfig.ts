@@ -4,6 +4,7 @@ import type { BrowserSessionConfig } from "../sessionStore.js";
 import type { ModelName, ThinkingTimeLevel } from "../oracle/types.js";
 import { normalizeThinkingTimeLevel } from "../oracle/thinkingTime.js";
 import { CHATGPT_URL, DEFAULT_MODEL_STRATEGY, DEFAULT_MODEL_TARGET } from "../browser/constants.js";
+import { isRecoverableChatGptConversationUrl } from "../browser/reattachability.js";
 import { normalizeChatgptUrl } from "../browser/utils.js";
 import { parseDuration } from "../duration.js";
 import { normalizeBrowserModelStrategy } from "../browser/modelStrategy.js";
@@ -28,7 +29,7 @@ const BROWSER_MODEL_LABELS: [ModelName, string][] = [
   // Most specific first (e.g., "gpt-5.2-thinking" before "gpt-5.2")
   ["gpt-5.5-pro", "Pro"],
   ["gpt-5.5-instant", "GPT-5.5 Instant"],
-  ["gpt-5.5", "Thinking 5.5"],
+  ["gpt-5.5", "GPT-5.5"],
   ["gpt-5.4-pro", "Pro"],
   ["gpt-5.2-thinking", "GPT-5.2 Thinking"],
   ["gpt-5.2-instant", "GPT-5.2 Instant"],
@@ -54,6 +55,8 @@ export interface BrowserFlagOptions {
   browserTab?: string;
   chatgptUrl?: string;
   browserUrl?: string;
+  chatgptConversationUrl?: string;
+  browserConversationUrl?: string;
   browserTimeout?: string;
   browserInputTimeout?: string;
   browserAttachmentTimeout?: string;
@@ -185,6 +188,10 @@ export async function buildBrowserConfig(
   });
   const rawUrl = options.chatgptUrl ?? options.browserUrl;
   const url = rawUrl ? normalizeChatgptUrl(rawUrl, CHATGPT_URL) : undefined;
+  const rawConversationUrl = options.chatgptConversationUrl ?? options.browserConversationUrl;
+  const resumeConversationUrl = rawConversationUrl
+    ? normalizeConversationUrl(rawConversationUrl)
+    : undefined;
 
   const desiredModel = isChatGptModel
     ? mapModelToBrowserLabel(options.model)
@@ -252,10 +259,21 @@ export async function buildBrowserConfig(
     allowCookieErrors: options.browserAllowCookieErrors ?? true,
     remoteChrome,
     browserTabRef: options.browserTab ?? undefined,
+    resumeConversationUrl,
     thinkingTime: normalizeThinkingTimeLevel(options.browserThinkingTime) ?? undefined,
     researchMode: options.browserResearch === "deep" ? "deep" : "off",
     archiveConversations: options.browserArchive,
   };
+}
+
+function normalizeConversationUrl(raw: string): string {
+  const normalized = normalizeChatgptUrl(raw, CHATGPT_URL);
+  if (!isRecoverableChatGptConversationUrl(normalized)) {
+    throw new Error(
+      `Invalid ChatGPT conversation URL: ${raw}. Expected https://chatgpt.com/c/<conversation-id>.`,
+    );
+  }
+  return normalized;
 }
 
 function validateAttachRunningOptions(

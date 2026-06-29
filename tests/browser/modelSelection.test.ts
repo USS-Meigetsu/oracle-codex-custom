@@ -212,10 +212,27 @@ const evaluateMenuModelSelectionExpression = async (
   );
 };
 
+type IntelligenceMenuLabels = {
+  instant: string;
+  medium: string;
+  high: string;
+  extraHigh: string;
+  pro: string;
+};
+
+const DEFAULT_INTELLIGENCE_LABELS: IntelligenceMenuLabels = {
+  instant: "Instant",
+  medium: "Medium",
+  high: "High",
+  extraHigh: "Extra High",
+  pro: "Pro Extended",
+};
+
 const evaluateIntelligenceModelSelectionExpression = async (
   targetModel: string,
   initialButtonLabel = "Extra High",
   includeInstant = true,
+  labels: IntelligenceMenuLabels = DEFAULT_INTELLIGENCE_LABELS,
 ): Promise<unknown> => {
   class FakeEventTarget {
     dispatchEvent(_event: unknown): boolean {
@@ -332,32 +349,32 @@ const evaluateIntelligenceModelSelectionExpression = async (
   );
   const initialIsPro = initialButtonLabel.toLowerCase().includes("pro");
   const instantOption = new FakeElement(
-    "Instant",
+    labels.instant,
     { role: "menuitemradio", "aria-checked": "false" },
     [],
     () => {
       proPillActive = false;
-      modelButton.textContent = "Instant";
+      modelButton.textContent = labels.instant;
     },
   );
   const intelligenceMenu = new FakeElement(
-    "IntelligenceInstantMediumHighExtra HighPro ExtendedGPT-5.5",
+    `Intelligence${labels.instant}${labels.medium}${labels.high}${labels.extraHigh}${labels.pro}GPT-5.5`,
     { role: "menu", "data-testid": "composer-intelligence-picker-content" },
     [
       ...(includeInstant ? [instantOption] : []),
-      new FakeElement("Medium", { role: "menuitemradio", "aria-checked": "false" }),
-      new FakeElement("High", { role: "menuitemradio", "aria-checked": "false" }),
+      new FakeElement(labels.medium, { role: "menuitemradio", "aria-checked": "false" }),
+      new FakeElement(labels.high, { role: "menuitemradio", "aria-checked": "false" }),
       new FakeElement(
-        "Extra High",
+        labels.extraHigh,
         { role: "menuitemradio", "aria-checked": initialIsPro ? "false" : "true" },
         [],
         () => {
           proPillActive = false;
-          modelButton.textContent = "Extra High";
+          modelButton.textContent = labels.extraHigh;
         },
       ),
       new FakeElement(
-        "Pro Extended",
+        labels.pro,
         {
           role: "menuitemradio",
           "aria-checked": initialIsPro ? "true" : "false",
@@ -365,7 +382,7 @@ const evaluateIntelligenceModelSelectionExpression = async (
         [],
         () => {
           proPillActive = true;
-          modelButton.textContent = "Pro Extended";
+          modelButton.textContent = labels.pro;
         },
       ),
       gpt55Trigger,
@@ -379,9 +396,9 @@ const evaluateIntelligenceModelSelectionExpression = async (
       intelligenceMenuOpen = true;
     },
   );
-  const proPill = new FakeElement("Pro Extended", {
+  const proPill = new FakeElement(labels.pro, {
     class: "__composer-pill",
-    "aria-label": "Pro Extended",
+    "aria-label": labels.pro,
   });
 
   const expression = buildModelSelectionExpressionForTest(targetModel);
@@ -1374,6 +1391,30 @@ describe("browser model selection matchers", () => {
   it("uses the non-Pro Intelligence effort row when switching from Pro to Thinking 5.5", async () => {
     await expect(
       evaluateIntelligenceModelSelectionExpression("Thinking 5.5", "Pro Extended"),
+    ).resolves.toEqual({
+      status: "switched",
+      label: "Extra High",
+    });
+  });
+
+  it("uses the non-Pro Intelligence effort row when switching from Pro to GPT-5.5", async () => {
+    await expect(
+      evaluateIntelligenceModelSelectionExpression("GPT-5.5", "Pro Extended"),
+    ).resolves.toEqual({
+      status: "switched",
+      label: "Extra High",
+    });
+  });
+
+  it("uses the localized non-Pro effort row when switching from Pro to GPT-5.5", async () => {
+    await expect(
+      evaluateIntelligenceModelSelectionExpression("GPT-5.5", "Pro", true, {
+        instant: "\u6700\u901f",
+        medium: "\u6a19\u6e96",
+        high: "\u9ad8",
+        extraHigh: "\u6700\u9ad8",
+        pro: "Pro",
+      }),
     ).resolves.toEqual({
       status: "switched",
       label: "Extra High",

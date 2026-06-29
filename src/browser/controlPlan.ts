@@ -9,6 +9,7 @@ type BrowserControlConfig = Pick<
   | "hideWindow"
   | "keepBrowser"
   | "manualLogin"
+  | "resumeConversationUrl"
 >;
 
 export interface BrowserControlPlan {
@@ -23,6 +24,12 @@ export function describeBrowserControlPlan(config: BrowserControlConfig = {}): B
   const guidance: string[] = [];
   const tabRef = String(config.browserTabRef ?? "").trim();
   const reusesExistingTab = tabRef.length > 0;
+  const resumesConversation = String(config.resumeConversationUrl ?? "").trim().length > 0;
+  if (resumesConversation) {
+    guidance.push(
+      "Oracle opens the configured existing ChatGPT conversation and verifies prior turns before submitting.",
+    );
+  }
 
   if (config.attachRunning) {
     guidance.push(

@@ -9,6 +9,7 @@ import type {
   BrowserResearchMode,
 } from "./browser/types.js";
 import type { ThinkingTimeLevel } from "./oracle/types.js";
+import { isRecoverableChatGptConversationUrl } from "./browser/reattachability.js";
 
 export type EnginePreference = "api" | "browser";
 
@@ -25,6 +26,10 @@ export interface BrowserConfigDefaults {
   attachRunning?: boolean;
   chatgptUrl?: string | null;
   url?: string;
+  /** Existing ChatGPT conversation (`/c/<id>`) to resume for this config scope. */
+  conversationUrl?: string | null;
+  /** Alias for conversationUrl, matching the internal browser runner field. */
+  resumeConversationUrl?: string | null;
   /** Delegate browser automation to a remote `oracle serve` instance (host:port). */
   remoteHost?: string | null;
   /** Access token clients must provide to the remote `oracle serve` instance. */
@@ -302,6 +307,15 @@ function sanitizeProjectConfig(config: UserConfig): UserConfig {
     ) {
       sanitized.browser.chatgptUrl = chatgptUrl;
       sanitized.browser.url = chatgptUrl;
+    }
+
+    const conversationUrl = browser.conversationUrl ?? browser.resumeConversationUrl;
+    if (
+      conversationUrl === null ||
+      (conversationUrl !== undefined && isRecoverableChatGptConversationUrl(conversationUrl))
+    ) {
+      sanitized.browser.conversationUrl = conversationUrl;
+      sanitized.browser.resumeConversationUrl = conversationUrl;
     }
   }
 

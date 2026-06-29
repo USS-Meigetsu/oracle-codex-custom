@@ -150,6 +150,36 @@ describe("loadUserConfig", () => {
     expect(result.config.browser?.url).toBe("https://chatgpt.com/g/g-p-project/project");
   });
 
+  it("allows project configs to set a trusted ChatGPT conversation URL", async () => {
+    await fs.writeFile(
+      path.join(tempDir, "config.json"),
+      `{
+        browser: {
+          conversationUrl: "https://chatgpt.com/c/user-thread",
+        },
+      }`,
+      "utf8",
+    );
+    const repoDir = await fs.mkdtemp(path.join(os.tmpdir(), "oracle-repo-"));
+    await fs.mkdir(path.join(repoDir, ".oracle"), { recursive: true });
+    await fs.writeFile(
+      path.join(repoDir, PROJECT_CONFIG_RELATIVE_PATH),
+      `{
+        browser: {
+          resumeConversationUrl: "https://chatgpt.com/c/project-thread",
+        },
+      }`,
+      "utf8",
+    );
+
+    const result = await loadUserConfig({ cwd: repoDir });
+
+    expect(result.config.browser?.conversationUrl).toBe("https://chatgpt.com/c/project-thread");
+    expect(result.config.browser?.resumeConversationUrl).toBe(
+      "https://chatgpt.com/c/project-thread",
+    );
+  });
+
   it("ignores project config browser URLs outside trusted ChatGPT hosts", async () => {
     await fs.writeFile(
       path.join(tempDir, "config.json"),
@@ -176,6 +206,34 @@ describe("loadUserConfig", () => {
 
     expect(result.config.browser?.chatgptUrl).toBe("https://chatgpt.com/g/g-p-user/project");
     expect(result.config.browser?.url).toBeUndefined();
+  });
+
+  it("ignores project conversation URLs that are not specific ChatGPT conversations", async () => {
+    await fs.writeFile(
+      path.join(tempDir, "config.json"),
+      `{
+        browser: {
+          conversationUrl: "https://chatgpt.com/c/user-thread",
+        },
+      }`,
+      "utf8",
+    );
+    const repoDir = await fs.mkdtemp(path.join(os.tmpdir(), "oracle-repo-"));
+    await fs.mkdir(path.join(repoDir, ".oracle"), { recursive: true });
+    await fs.writeFile(
+      path.join(repoDir, PROJECT_CONFIG_RELATIVE_PATH),
+      `{
+        browser: {
+          conversationUrl: "https://chatgpt.com/",
+        },
+      }`,
+      "utf8",
+    );
+
+    const result = await loadUserConfig({ cwd: repoDir });
+
+    expect(result.config.browser?.conversationUrl).toBe("https://chatgpt.com/c/user-thread");
+    expect(result.config.browser?.resumeConversationUrl).toBeUndefined();
   });
 
   it("does not let project configs set provider routing or local state paths", async () => {

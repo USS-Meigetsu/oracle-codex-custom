@@ -318,6 +318,37 @@ export async function readConversationTurnIndex(
   }
 }
 
+export async function readPromptPreviewTurnIndex(
+  Runtime: ChromeClient["Runtime"],
+  promptPreview?: string | null,
+): Promise<number | null> {
+  const preview = promptPreview?.trim();
+  if (!preview) {
+    return null;
+  }
+  const { result } = await Runtime.evaluate({
+    expression: `(() => {
+      const needle = ${JSON.stringify(preview.toLowerCase().replace(/\s+/g, " ").slice(0, 120))};
+      if (!needle) return null;
+      const normalize = (value) => String(value || '').toLowerCase().replace(/\\s+/g, ' ').trim();
+      const turns = Array.from(document.querySelectorAll(${JSON.stringify(CONVERSATION_TURN_SELECTOR)}));
+      let matched = null;
+      for (const [index, node] of turns.entries()) {
+        const attr = (node.getAttribute('data-message-author-role') || node.getAttribute('data-turn') || node.dataset?.turn || '').toLowerCase();
+        const isUser = attr === 'user' || Boolean(node.querySelector('[data-message-author-role="user"]'));
+        if (!isUser) continue;
+        const text = normalize(node.innerText || node.textContent || '');
+        if (text.length > 0 && (text.includes(needle) || needle.includes(text.slice(0, needle.length)))) {
+          matched = index;
+        }
+      }
+      return matched;
+    })()`,
+    returnByValue: true,
+  });
+  return typeof result?.value === "number" ? result.value : null;
+}
+
 function normalizeForComparison(text: string): string {
   return String(text || "")
     .toLowerCase()

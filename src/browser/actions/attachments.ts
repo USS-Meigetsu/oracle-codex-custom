@@ -77,6 +77,9 @@ export async function uploadAttachmentFile(
           '[data-testid*="upload"]',
           '[aria-label*="Remove"]',
           '[aria-label*="remove"]',
+          '[aria-label*="\\u524a\\u9664"]',
+          '[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+          '[aria-label*="\\u6dfb\\u4ed8"]',
         ];
         const locateComposerRoot = () => {
           const promptNode = findPromptNode();
@@ -119,6 +122,10 @@ export async function uploadAttachmentFile(
           '[aria-label*="Remove"]',
           'button[aria-label*="Remove"]',
           '[aria-label*="remove"]',
+          '[aria-label*="\\u524a\\u9664"]',
+          'button[aria-label*="\\u524a\\u9664"]',
+          '[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+          '[aria-label*="\\u6dfb\\u4ed8"]',
         ].join(',');
         const localCandidates = scope ? Array.from(scope.querySelectorAll(chipSelector)) : [];
         const globalCandidates = Array.from(document.querySelectorAll(chipSelector));
@@ -145,7 +152,7 @@ export async function uploadAttachmentFile(
 
         if (!uiMatch) {
           const removeScope = root ?? document;
-          const cardTexts = Array.from(removeScope.querySelectorAll('[aria-label*="Remove"],[aria-label*="remove"]')).map(
+          const cardTexts = Array.from(removeScope.querySelectorAll('[aria-label*="Remove"],[aria-label*="remove"],[aria-label*="\\u524a\\u9664"]')).map(
             (btn) => btn?.parentElement?.parentElement?.innerText ?? '',
           );
           if (cardTexts.some(matchesExpected)) {
@@ -184,11 +191,16 @@ export async function uploadAttachmentFile(
               return true;
             }
             const text = node.textContent?.toLowerCase?.() ?? '';
-            return /\\buploading\\b/.test(text) || /\\bprocessing\\b/.test(text);
+            return (
+              /\\buploading\\b/.test(text) ||
+              /\\bprocessing\\b/.test(text) ||
+              text.includes('\\u30a2\\u30c3\\u30d7\\u30ed\\u30fc\\u30c9\\u4e2d') ||
+              text.includes('\\u51e6\\u7406\\u4e2d')
+            );
           });
         });
 
-        const countRegex = /(?:^|\\b)(\\d+)\\s+(?:files?|attachments?)\\b/;
+        const countRegex = /(?:^|\\b)(\\d+)\\s+(?:files?|attachments?)\\b|(?:\\u30d5\\u30a1\\u30a4\\u30eb|\\u6dfb\\u4ed8)\\s*(\\d+)/;
         const collectFileCount = (candidates) => {
           let count = 0;
           for (const node of candidates) {
@@ -223,7 +235,12 @@ export async function uploadAttachmentFile(
             for (const raw of values) {
               if (!raw) continue;
               const normalized = normalize(raw);
-              if (normalized.includes('file') || normalized.includes('attachment')) {
+              if (
+                normalized.includes('file') ||
+                normalized.includes('attachment') ||
+                normalized.includes('\\u30d5\\u30a1\\u30a4\\u30eb') ||
+                normalized.includes('\\u6dfb\\u4ed8')
+              ) {
                 hasFileHint = true;
                 break;
               }
@@ -233,7 +250,7 @@ export async function uploadAttachmentFile(
               if (!raw) continue;
               const match = normalize(raw).match(countRegex);
               if (match) {
-                const parsed = Number(match[1]);
+                const parsed = Number(match[1] ?? match[2]);
                 if (Number.isFinite(parsed)) {
                   count = Math.max(count, parsed);
                 }
@@ -253,6 +270,10 @@ export async function uploadAttachmentFile(
           '[title*="file"]',
           '[aria-label*="attachment"]',
           '[title*="attachment"]',
+          '[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+          '[title*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+          '[aria-label*="\\u6dfb\\u4ed8"]',
+          '[title*="\\u6dfb\\u4ed8"]',
         ].join(',');
         const fileCountScope = scope ?? root ?? document.body;
         const localFileNodes = fileCountScope
@@ -316,6 +337,8 @@ export async function uploadAttachmentFile(
             'button[aria-label*="add"]',
             'button[aria-label*="attachment"]',
             'button[aria-label*="file"]',
+            'button[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+            'button[aria-label*="\\u6dfb\\u4ed8"]',
           ];
           for (const selector of selectors) {
             const el = document.querySelector(selector);
@@ -353,6 +376,8 @@ export async function uploadAttachmentFile(
             'button[aria-label*="add"]',
             'button[aria-label*="attachment"]',
             'button[aria-label*="file"]',
+            'button[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+            'button[aria-label*="\\u6dfb\\u4ed8"]',
           ];
           for (const selector of selectors) {
             const el = document.querySelector(selector);
@@ -450,6 +475,9 @@ export async function uploadAttachmentFile(
         '[data-testid*="upload"]',
         '[aria-label*="Remove"]',
         '[aria-label*="remove"]',
+        '[aria-label*="\\u524a\\u9664"]',
+        '[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+        '[aria-label*="\\u6dfb\\u4ed8"]',
       ];
       const locateComposerRoot = () => {
         const promptNode = findPromptNode();
@@ -508,7 +536,7 @@ export async function uploadAttachmentFile(
         return parts.length > 0 && parts.every((p) => p.startsWith('image/'));
       };
       const chipContainer = scope ?? document;
-        const chipSelector = '[data-testid*="attachment"],[data-testid*="chip"],[data-testid*="upload"],[data-testid*="file"],[aria-label*="Remove"],[aria-label*="remove"]';
+        const chipSelector = '[data-testid*="attachment"],[data-testid*="chip"],[data-testid*="upload"],[data-testid*="file"],[aria-label*="Remove"],[aria-label*="remove"],[aria-label*="\\u524a\\u9664"],[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"],[aria-label*="\\u6dfb\\u4ed8"]';
       const baselineChipCount = chipContainer.querySelectorAll(chipSelector).length;
       const baselineChips = Array.from(chipContainer.querySelectorAll(chipSelector))
         .slice(0, 20)
@@ -527,10 +555,15 @@ export async function uploadAttachmentFile(
             return true;
           }
           const text = node.textContent?.toLowerCase?.() ?? '';
-          return /\\buploading\\b/.test(text) || /\\bprocessing\\b/.test(text);
+          return (
+            /\\buploading\\b/.test(text) ||
+            /\\bprocessing\\b/.test(text) ||
+            text.includes('\\u30a2\\u30c3\\u30d7\\u30ed\\u30fc\\u30c9\\u4e2d') ||
+            text.includes('\\u51e6\\u7406\\u4e2d')
+          );
         });
       });
-      const countRegex = /(?:^|\\b)(\\d+)\\s+(?:files?|attachments?)\\b/;
+      const countRegex = /(?:^|\\b)(\\d+)\\s+(?:files?|attachments?)\\b|(?:\\u30d5\\u30a1\\u30a4\\u30eb|\\u6dfb\\u4ed8)\\s*(\\d+)/;
       const collectFileCount = (candidates) => {
         let count = 0;
         for (const node of candidates) {
@@ -565,7 +598,12 @@ export async function uploadAttachmentFile(
           for (const raw of values) {
             if (!raw) continue;
             const lowered = String(raw).toLowerCase();
-            if (lowered.includes('file') || lowered.includes('attachment')) {
+            if (
+              lowered.includes('file') ||
+              lowered.includes('attachment') ||
+              lowered.includes('\\u30d5\\u30a1\\u30a4\\u30eb') ||
+              lowered.includes('\\u6dfb\\u4ed8')
+            ) {
               hasFileHint = true;
               break;
             }
@@ -575,7 +613,7 @@ export async function uploadAttachmentFile(
             if (!raw) continue;
             const match = String(raw).toLowerCase().match(countRegex);
             if (match) {
-              const parsed = Number(match[1]);
+              const parsed = Number(match[1] ?? match[2]);
               if (Number.isFinite(parsed)) {
                 count = Math.max(count, parsed);
               }
@@ -595,6 +633,10 @@ export async function uploadAttachmentFile(
         '[title*="file"]',
         '[aria-label*="attachment"]',
         '[title*="attachment"]',
+        '[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+        '[title*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+        '[aria-label*="\\u6dfb\\u4ed8"]',
+        '[title*="\\u6dfb\\u4ed8"]',
       ].join(',');
       const fileCountScope = scope ?? root ?? document.body;
       const localFileNodes = fileCountScope
@@ -832,6 +874,9 @@ export async function uploadAttachmentFile(
       '[data-testid*="upload"]',
       '[aria-label*="Remove"]',
       '[aria-label*="remove"]',
+      '[aria-label*="\\u524a\\u9664"]',
+      '[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+      '[aria-label*="\\u6dfb\\u4ed8"]',
     ];
     const locateComposerRoot = () => {
       const promptNode = findPromptNode();
@@ -866,7 +911,7 @@ export async function uploadAttachmentFile(
       return parentHasSend ? parent : root;
     })();
     const chipContainer = scope ?? document;
-    const chipSelector = '[data-testid*="attachment"],[data-testid*="chip"],[data-testid*="upload"],[aria-label*="Remove"],[aria-label*="remove"]';
+    const chipSelector = '[data-testid*="attachment"],[data-testid*="chip"],[data-testid*="upload"],[aria-label*="Remove"],[aria-label*="remove"],[aria-label*="\\u524a\\u9664"],[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"],[aria-label*="\\u6dfb\\u4ed8"]';
     const chips = Array.from(chipContainer.querySelectorAll(chipSelector))
       .slice(0, 20)
       .map((node) => ({
@@ -884,7 +929,12 @@ export async function uploadAttachmentFile(
           return true;
         }
         const text = node.textContent?.toLowerCase?.() ?? '';
-        return /\\buploading\\b/.test(text) || /\\bprocessing\\b/.test(text);
+        return (
+          /\\buploading\\b/.test(text) ||
+          /\\bprocessing\\b/.test(text) ||
+          text.includes('\\u30a2\\u30c3\\u30d7\\u30ed\\u30fc\\u30c9\\u4e2d') ||
+          text.includes('\\u51e6\\u7406\\u4e2d')
+        );
       });
     });
     const input = document.querySelector('input[type="file"][data-oracle-upload-idx="${idx}"]');
@@ -1229,6 +1279,9 @@ export async function clearComposerAttachments(
       '[data-testid*="upload"]',
       '[aria-label*="Remove"]',
       '[aria-label*="remove"]',
+      '[aria-label*="\\u524a\\u9664"]',
+      '[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+      '[aria-label*="\\u6dfb\\u4ed8"]',
     ];
     const locateComposerRoot = () => {
       const promptNode = findPromptNode();
@@ -1267,6 +1320,7 @@ export async function clearComposerAttachments(
       'button[aria-label="Remove file"]',
       '[aria-label*="Remove file"]',
       '[aria-label*="remove file"]',
+      '[aria-label*="\\u524a\\u9664"]',
       '[data-testid*="remove-attachment"]',
       '[data-testid*="attachment-remove"]',
     ];
@@ -1363,6 +1417,9 @@ export async function waitForAttachmentCompletion(
       '[data-testid*="upload"]',
       '[aria-label*="Remove"]',
       '[aria-label*="remove"]',
+      '[aria-label*="\\u524a\\u9664"]',
+      '[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+      '[aria-label*="\\u6dfb\\u4ed8"]',
     ];
     const locateComposerRoot = () => {
       const promptNode = findPromptNode();
@@ -1417,7 +1474,12 @@ export async function waitForAttachmentCompletion(
         }
         // Avoid false positives from user prompts ("upload:") or generic UI copy; only treat explicit progress strings as uploading.
         const text = node.textContent?.toLowerCase?.() ?? '';
-        return /\buploading\b/.test(text) || /\bprocessing\b/.test(text);
+        return (
+          /\buploading\b/.test(text) ||
+          /\bprocessing\b/.test(text) ||
+          text.includes('\\u30a2\\u30c3\\u30d7\\u30ed\\u30fc\\u30c9\\u4e2d') ||
+          text.includes('\\u51e6\\u7406\\u4e2d')
+        );
       });
     });
     const attachmentChipSelectors = [
@@ -1427,6 +1489,10 @@ export async function waitForAttachmentCompletion(
       '[data-testid*="file"]',
       '[aria-label*="Remove"]',
       'button[aria-label*="Remove"]',
+      '[aria-label*="\\u524a\\u9664"]',
+      'button[aria-label*="\\u524a\\u9664"]',
+      '[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+      '[aria-label*="\\u6dfb\\u4ed8"]',
     ];
     const attachedNames = [];
     for (const selector of attachmentChipSelectors) {
@@ -1442,9 +1508,9 @@ export async function waitForAttachmentCompletion(
         }
       }
     }
-    const cardTexts = Array.from(composerScope.querySelectorAll('[aria-label*="Remove"]')).map((btn) =>
-      btn?.parentElement?.parentElement?.innerText?.toLowerCase?.() ?? '',
-    );
+    const cardTexts = Array.from(
+      composerScope.querySelectorAll('[aria-label*="Remove"],[aria-label*="\\u524a\\u9664"]'),
+    ).map((btn) => btn?.parentElement?.parentElement?.innerText?.toLowerCase?.() ?? '');
     attachedNames.push(...cardTexts.filter(Boolean));
 
     const inputNames = [];
@@ -1463,7 +1529,7 @@ export async function waitForAttachmentCompletion(
         if (file?.name) inputNames.push(file.name.toLowerCase());
       }
     }
-    const countRegex = /(?:^|\\b)(\\d+)\\s+(?:files?|attachments?)\\b/;
+    const countRegex = /(?:^|\\b)(\\d+)\\s+(?:files?|attachments?)\\b|(?:\\u30d5\\u30a1\\u30a4\\u30eb|\\u6dfb\\u4ed8)\\s*(\\d+)/;
     const fileCountSelectors = [
       'button',
       '[role="button"]',
@@ -1471,11 +1537,15 @@ export async function waitForAttachmentCompletion(
       '[data-testid*="upload"]',
       '[data-testid*="attachment"]',
       '[data-testid*="chip"]',
-      '[aria-label*="file"]',
-      '[title*="file"]',
-      '[aria-label*="attachment"]',
-      '[title*="attachment"]',
-    ].join(',');
+          '[aria-label*="file"]',
+          '[title*="file"]',
+          '[aria-label*="attachment"]',
+          '[title*="attachment"]',
+          '[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+          '[title*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+          '[aria-label*="\\u6dfb\\u4ed8"]',
+          '[title*="\\u6dfb\\u4ed8"]',
+        ].join(',');
     const collectFileCount = (nodes) => {
       let count = 0;
       for (const node of nodes) {
@@ -1510,7 +1580,12 @@ export async function waitForAttachmentCompletion(
         for (const raw of candidates) {
           if (!raw) continue;
           const lowered = String(raw).toLowerCase();
-          if (lowered.includes('file') || lowered.includes('attachment')) {
+          if (
+            lowered.includes('file') ||
+            lowered.includes('attachment') ||
+            lowered.includes('\\u30d5\\u30a1\\u30a4\\u30eb') ||
+            lowered.includes('\\u6dfb\\u4ed8')
+          ) {
             hasFileHint = true;
             break;
           }
@@ -1520,7 +1595,7 @@ export async function waitForAttachmentCompletion(
           if (!raw) continue;
           const match = String(raw).toLowerCase().match(countRegex);
           if (match) {
-            const parsed = Number(match[1]);
+          const parsed = Number(match[1] ?? match[2]);
             if (Number.isFinite(parsed)) {
               count = Math.max(count, parsed);
             }
@@ -1832,11 +1907,22 @@ function buildUserTurnAttachmentExpression(options: {
       '[aria-label*="attachment"]',
       '[title*="file"]',
       '[title*="attachment"]',
+      '[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+      '[aria-label*="\\u6dfb\\u4ed8"]',
+      '[title*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+      '[title*="\\u6dfb\\u4ed8"]',
     ];
     const attachmentUiCount = lastUser.node.querySelectorAll(attachmentSelectors.join(',')).length;
     const hasAttachmentUi =
-      attachmentUiCount > 0 || attrs.some((attr) => attr.includes('file') || attr.includes('attachment'));
-    const countRegex = /(?:^|\\b)(\\d+)\\s+(?:files?|attachments?)\\b/;
+      attachmentUiCount > 0 ||
+      attrs.some(
+        (attr) =>
+          attr.includes('file') ||
+          attr.includes('attachment') ||
+          attr.includes('\\u30d5\\u30a1\\u30a4\\u30eb') ||
+          attr.includes('\\u6dfb\\u4ed8'),
+      );
+    const countRegex = /(?:^|\\b)(\\d+)\\s+(?:files?|attachments?)\\b|(?:\\u30d5\\u30a1\\u30a4\\u30eb|\\u6dfb\\u4ed8)\\s*(\\d+)/;
     const fileCountNodes = Array.from(lastUser.node.querySelectorAll('button,span,div,[aria-label],[title]'));
     let fileCount = 0;
     for (const node of fileCountNodes) {
@@ -1853,7 +1939,12 @@ function buildUserTurnAttachmentExpression(options: {
       for (const raw of candidates) {
         if (!raw) continue;
         const lowered = String(raw).toLowerCase();
-        if (lowered.includes('file') || lowered.includes('attachment')) {
+        if (
+          lowered.includes('file') ||
+          lowered.includes('attachment') ||
+          lowered.includes('\\u30d5\\u30a1\\u30a4\\u30eb') ||
+          lowered.includes('\\u6dfb\\u4ed8')
+        ) {
           hasFileHint = true;
           break;
         }
@@ -1863,7 +1954,7 @@ function buildUserTurnAttachmentExpression(options: {
         if (!raw) continue;
         const match = String(raw).toLowerCase().match(countRegex);
         if (match) {
-          const count = Number(match[1]);
+          const count = Number(match[1] ?? match[2]);
           if (Number.isFinite(count)) {
             fileCount = Math.max(fileCount, count);
           }
@@ -1967,6 +2058,9 @@ export async function waitForAttachmentVisible(
       '[data-testid*="file"]',
       '[aria-label*="Remove"]',
       '[aria-label*="remove"]',
+      '[aria-label*="\\u524a\\u9664"]',
+      '[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+      '[aria-label*="\\u6dfb\\u4ed8"]',
     ];
     const locateComposerRoot = () => {
       const promptNode = findPromptNode();
@@ -2001,7 +2095,7 @@ export async function waitForAttachmentVisible(
     }
 
     const removeButtons = Array.from(
-      (composerRoot ?? document).querySelectorAll('[aria-label*="Remove"],[aria-label*="remove"]'),
+      (composerRoot ?? document).querySelectorAll('[aria-label*="Remove"],[aria-label*="remove"],[aria-label*="\\u524a\\u9664"]'),
     );
     const visibleRemove = removeButtons.some((btn) => {
       if (!(btn instanceof HTMLElement)) return false;
@@ -2014,14 +2108,14 @@ export async function waitForAttachmentVisible(
       return { found: true, source: 'remove-button' };
     }
 
-    const cardTexts = Array.from(composerRoot.querySelectorAll('[aria-label*="Remove"]')).map((btn) =>
-      btn?.parentElement?.parentElement?.innerText?.toLowerCase?.() ?? '',
-    );
+    const cardTexts = Array.from(
+      composerRoot.querySelectorAll('[aria-label*="Remove"],[aria-label*="\\u524a\\u9664"]'),
+    ).map((btn) => btn?.parentElement?.parentElement?.innerText?.toLowerCase?.() ?? '');
     if (cardTexts.some((text) => text.includes(normalized) || (normalizedNoExt.length >= 6 && text.includes(normalizedNoExt)))) {
       return { found: true, source: 'attachment-cards' };
     }
 
-    const countRegex = /(?:^|\\b)(\\d+)\\s+(?:files?|attachments?)\\b/;
+    const countRegex = /(?:^|\\b)(\\d+)\\s+(?:files?|attachments?)\\b|(?:\\u30d5\\u30a1\\u30a4\\u30eb|\\u6dfb\\u4ed8)\\s*(\\d+)/;
     const fileCountNodes = Array.from(composerRoot.querySelectorAll('button,span,div,[aria-label],[title]'));
     let fileCount = 0;
     for (const node of fileCountNodes) {
@@ -2056,7 +2150,12 @@ export async function waitForAttachmentVisible(
       for (const raw of candidates) {
         if (!raw) continue;
         const lowered = String(raw).toLowerCase();
-        if (lowered.includes('file') || lowered.includes('attachment')) {
+        if (
+          lowered.includes('file') ||
+          lowered.includes('attachment') ||
+          lowered.includes('\\u30d5\\u30a1\\u30a4\\u30eb') ||
+          lowered.includes('\\u6dfb\\u4ed8')
+        ) {
           hasFileHint = true;
           break;
         }
@@ -2066,7 +2165,7 @@ export async function waitForAttachmentVisible(
         if (!raw) continue;
         const match = String(raw).toLowerCase().match(countRegex);
         if (match) {
-          const count = Number(match[1]);
+            const count = Number(match[1] ?? match[2]);
           if (Number.isFinite(count)) {
             fileCount = Math.max(fileCount, count);
           }
@@ -2137,6 +2236,10 @@ async function waitForAttachmentAnchored(
       'button[aria-label*="Remove"]',
       '[aria-label*="remove"]',
       'button[aria-label*="remove"]',
+      '[aria-label*="\\u524a\\u9664"]',
+      'button[aria-label*="\\u524a\\u9664"]',
+      '[aria-label*="\\u30d5\\u30a1\\u30a4\\u30eb"]',
+      '[aria-label*="\\u6dfb\\u4ed8"]',
     ];
     for (const selector of selectors) {
       for (const node of Array.from(document.querySelectorAll(selector))) {
@@ -2149,13 +2252,13 @@ async function waitForAttachmentAnchored(
         }
       }
     }
-    const cards = Array.from(document.querySelectorAll('[aria-label*="Remove"]')).map((btn) =>
-      btn?.parentElement?.parentElement?.innerText?.toLowerCase?.() ?? '',
-    );
+    const cards = Array.from(
+      document.querySelectorAll('[aria-label*="Remove"],[aria-label*="\\u524a\\u9664"]'),
+    ).map((btn) => btn?.parentElement?.parentElement?.innerText?.toLowerCase?.() ?? '');
     if (cards.some(matchesExpected)) {
       return { found: true, text: cards.find(matchesExpected) };
     }
-    const countRegex = /(?:^|\\b)(\\d+)\\s+(?:files?|attachments?)\\b/;
+    const countRegex = /(?:^|\\b)(\\d+)\\s+(?:files?|attachments?)\\b|(?:\\u30d5\\u30a1\\u30a4\\u30eb|\\u6dfb\\u4ed8)\\s*(\\d+)/;
     const fileCountNodes = (() => {
       const nodes = [];
       const seen = new Set();
@@ -2206,7 +2309,12 @@ async function waitForAttachmentAnchored(
       for (const raw of candidates) {
         if (!raw) continue;
         const lowered = String(raw).toLowerCase();
-        if (lowered.includes('file') || lowered.includes('attachment')) {
+        if (
+          lowered.includes('file') ||
+          lowered.includes('attachment') ||
+          lowered.includes('\\u30d5\\u30a1\\u30a4\\u30eb') ||
+          lowered.includes('\\u6dfb\\u4ed8')
+        ) {
           hasFileHint = true;
           break;
         }
@@ -2216,7 +2324,7 @@ async function waitForAttachmentAnchored(
         if (!raw) continue;
         const match = String(raw).toLowerCase().match(countRegex);
         if (match) {
-          const count = Number(match[1]);
+          const count = Number(match[1] ?? match[2]);
           if (Number.isFinite(count)) {
             fileCount = Math.max(fileCount, count);
           }

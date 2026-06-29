@@ -58,7 +58,11 @@ import type { BrowserModelSelectionEvidence } from "../sessionStore.js";
 import { CHATGPT_URL, CONVERSATION_TURN_SELECTOR, DEFAULT_MODEL_STRATEGY } from "./constants.js";
 import type { LaunchedChrome } from "chrome-launcher";
 import { BrowserAutomationError } from "../oracle/errors.js";
-import { alignPromptEchoPair, buildPromptEchoMatcher } from "./reattachHelpers.js";
+import {
+  alignPromptEchoPair,
+  buildPromptEchoMatcher,
+  readPromptPreviewTurnIndex,
+} from "./reattachHelpers.js";
 import type { ProfileRunLock } from "./profileState.js";
 import {
   cleanupStaleProfileState,
@@ -1360,7 +1364,7 @@ export async function runBrowserMode(options: BrowserRunOptions): Promise<Browse
     };
     await captureRuntimeSnapshot();
     const modelStrategy = config.modelStrategy ?? DEFAULT_MODEL_STRATEGY;
-    if (config.desiredModel && modelStrategy !== "ignore" && !isResumingConversation) {
+    if (config.desiredModel && modelStrategy !== "ignore") {
       modelSelectionEvidence = await raceWithDisconnect(
         withRetries(
           () => ensureModelSelection(Runtime, config.desiredModel as string, logger, modelStrategy),
@@ -1388,16 +1392,12 @@ export async function runBrowserMode(options: BrowserRunOptions): Promise<Browse
       logger(
         `Prompt textarea ready (after model switch, ${promptText.length.toLocaleString()} chars queued)`,
       );
-    } else if (modelStrategy === "ignore" || isResumingConversation) {
+    } else if (modelStrategy === "ignore") {
       modelSelectionEvidence = buildSkippedModelSelectionEvidence(
         config.desiredModel,
         modelStrategy,
       );
-      logger(
-        isResumingConversation
-          ? "Model picker: skipped (resumed conversation)"
-          : "Model picker: skipped (strategy=ignore)",
-      );
+      logger("Model picker: skipped (strategy=ignore)");
     }
     const deepResearch = config.researchMode === "deep";
     // Handle thinking time selection if specified. Deep Research owns its own effort flow.
@@ -1585,7 +1585,12 @@ export async function runBrowserMode(options: BrowserRunOptions): Promise<Browse
         },
         logger,
       });
-      baselineTurns = submission.baselineTurns;
+      baselineTurns = await alignAssistantCaptureBaselineToPromptTurn(
+        Runtime,
+        promptText,
+        submission.baselineTurns,
+        logger,
+      );
       baselineAssistantText = submission.baselineAssistantText;
       deepResearchTargetKeys = submission.deepResearchTargetKeys ?? [];
       deepResearchTargetBaselineCaptured = submission.deepResearchTargetBaselineCaptured ?? false;
@@ -2051,7 +2056,12 @@ export async function runBrowserMode(options: BrowserRunOptions): Promise<Browse
           },
           logger,
         });
-        baselineTurns = submission.baselineTurns;
+        baselineTurns = await alignAssistantCaptureBaselineToPromptTurn(
+          Runtime,
+          followUpPrompt,
+          submission.baselineTurns,
+          logger,
+        );
         baselineAssistantText = submission.baselineAssistantText;
       } finally {
         await releaseProfileLockIfHeld();
@@ -2868,7 +2878,7 @@ async function runRemoteBrowserMode(
     }
 
     const modelStrategy = config.modelStrategy ?? DEFAULT_MODEL_STRATEGY;
-    if (config.desiredModel && modelStrategy !== "ignore" && !config.resumeConversationUrl) {
+    if (config.desiredModel && modelStrategy !== "ignore") {
       modelSelectionEvidence = await withRetries(
         () => ensureModelSelection(Runtime, config.desiredModel as string, logger, modelStrategy),
         {
@@ -2887,16 +2897,12 @@ async function runRemoteBrowserMode(
       logger(
         `Prompt textarea ready (after model switch, ${promptText.length.toLocaleString()} chars queued)`,
       );
-    } else if (modelStrategy === "ignore" || config.resumeConversationUrl) {
+    } else if (modelStrategy === "ignore") {
       modelSelectionEvidence = buildSkippedModelSelectionEvidence(
         config.desiredModel,
         modelStrategy,
       );
-      logger(
-        config.resumeConversationUrl
-          ? "Model picker: skipped (resumed conversation)"
-          : "Model picker: skipped (strategy=ignore)",
-      );
+      logger("Model picker: skipped (strategy=ignore)");
     }
     const deepResearch = config.researchMode === "deep";
     // Handle thinking time selection if specified. Deep Research owns its own effort flow.
@@ -3024,7 +3030,12 @@ async function runRemoteBrowserMode(
       },
       logger,
     });
-    baselineTurns = submission.baselineTurns;
+    baselineTurns = await alignAssistantCaptureBaselineToPromptTurn(
+      Runtime,
+      promptText,
+      submission.baselineTurns,
+      logger,
+    );
     baselineAssistantText = submission.baselineAssistantText;
     deepResearchTargetKeys = submission.deepResearchTargetKeys ?? [];
     deepResearchTargetBaselineCaptured = submission.deepResearchTargetBaselineCaptured ?? false;
@@ -3451,7 +3462,12 @@ async function runRemoteBrowserMode(
         },
         logger,
       });
-      baselineTurns = submission.baselineTurns;
+      baselineTurns = await alignAssistantCaptureBaselineToPromptTurn(
+        Runtime,
+        followUpPrompt,
+        submission.baselineTurns,
+        logger,
+      );
       baselineAssistantText = submission.baselineAssistantText;
       const turn = await captureAssistantTurn(followUpPrompt, `Follow-up ${index + 1}`);
       turns.push({ ...turn, prompt: followUpPrompt });
@@ -3890,6 +3906,24 @@ function buildSessionValidationExpression(): string {
       pageUrl,
     };
   })()`;
+}
+
+async function alignAssistantCaptureBaselineToPromptTurn(
+  Runtime: ChromeClient["Runtime"],
+  prompt: string,
+  fallbackBaselineTurns: number | null,
+  logger: BrowserLogger,
+): Promise<number | null> {
+  const promptTurnIndex = await readPromptPreviewTurnIndex(Runtime, prompt).catch(() => null);
+  if (typeof promptTurnIndex !== "number" || !Number.isFinite(promptTurnIndex)) {
+    return fallbackBaselineTurns;
+  }
+  if (fallbackBaselineTurns !== promptTurnIndex) {
+    logger(
+      `[browser] Assistant capture baseline anchored at submitted prompt turn ${promptTurnIndex}.`,
+    );
+  }
+  return promptTurnIndex;
 }
 
 async function readConversationTurnCount(

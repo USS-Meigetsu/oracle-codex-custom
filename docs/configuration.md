@@ -26,6 +26,8 @@ JSON5 parsing, so trailing commas and comments are allowed.
     chromeCookiePath: null,
     chatgptUrl: "https://chatgpt.com/", // root is fine; folder URLs also work
     url: null, // alias for chatgptUrl (kept for back-compat)
+    conversationUrl: null, // optional https://chatgpt.com/c/... thread to resume
+    resumeConversationUrl: null, // alias for conversationUrl
     // Remote browser bridge (preferred place to store remote host settings)
     remoteHost: "127.0.0.1:9473",
     remoteToken: "…", // written by `oracle bridge client` (kept private; not printed by default)
@@ -81,6 +83,7 @@ Put a project-level config at `.oracle/config.json` inside any project folder:
   model: "gpt-5.5-pro",
   browser: {
     chatgptUrl: "https://chatgpt.com/g/g-p-example/project",
+    conversationUrl: "https://chatgpt.com/c/project-thread",
     modelStrategy: "current",
     archiveConversations: "never",
   },
@@ -92,6 +95,15 @@ until your home directory, then applies them from parent to child after the user
 config. Nested objects are merged, while scalars and arrays replace earlier
 values. This lets a parent folder set broad defaults and override a specific
 ChatGPT Project URL in a package subdirectory.
+
+Set `browser.conversationUrl` when a project should reuse one existing ChatGPT
+conversation instead of creating fresh browser chats. It must be a specific
+ChatGPT conversation URL (`https://chatgpt.com/c/...` or
+`https://chat.openai.com/c/...`). Oracle waits for prior turns to hydrate and
+fails closed if the conversation cannot be verified, so a stale project config
+does not silently post into a new chat. Model selection still runs before
+submission unless `browser.modelStrategy`/`--browser-model-strategy` is set to
+`current` or `ignore`.
 
 Project configs intentionally support only workflow defaults. They cannot set
 provider routing or secret/executable fields such as `apiBaseUrl`, `azure`,
@@ -114,6 +126,7 @@ CLI flags and explicit override environment variables → effective config (proj
 - `sessionRetentionHours` controls the default value for `--retain-hours`. When unset, `ORACLE_RETAIN_HOURS` (if present) becomes the fallback, and the CLI flag still wins over both.
 - `ORACLE_MAX_FILE_SIZE_BYTES` overrides `maxFileSizeBytes` when set. Oracle validates it as a positive integer number of bytes before reading any `--file` inputs.
 - `browser.chatgptUrl` accepts either the root ChatGPT URL (`https://chatgpt.com/`) or a folder/workspace URL (e.g., `https://chatgpt.com/g/.../project`); `browser.url` remains as a legacy alias.
+- `browser.conversationUrl` accepts a specific existing ChatGPT conversation (`https://chatgpt.com/c/...`) and is also available as `browser.resumeConversationUrl` or the `--chatgpt-conversation-url` flag. ChatGPT model selection still runs for resumed conversations unless `browser.modelStrategy` is `current` or `ignore`.
 - Browser automation defaults can be set under `browser.*`, including `browser.manualLogin`, `browser.manualLoginProfileDir`, `browser.attachRunning`, `browser.thinkingTime` (CLI override: `--browser-thinking-time`), and `browser.researchMode` (CLI override: `--browser-research`). On Windows, `browser.manualLogin` defaults to `true` when omitted.
 
 If the config is missing or invalid, Oracle falls back to defaults and prints a warning for parse errors.

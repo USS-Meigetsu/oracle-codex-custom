@@ -1,0 +1,7 @@
+{
+  // Copy this into <project>\\.oracle\\config.json when a project should reuse
+  // a specific existing ChatGPT conversation.
+  "browser": {
+    "conversationUrl": "https://chatgpt.com/c/<project-specific-thread-id>",
+  },
+}

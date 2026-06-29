@@ -16,6 +16,9 @@ Recommended defaults:
 - Engine: browser (`--engine browser`)
 - Model: GPT‑5.5 Pro (either `--model gpt-5.5-pro` or a ChatGPT picker label like `--model "5.5 Pro"`)
 - Attachments: directories/globs + excludes; avoid secrets.
+- Local policy: prefer the modified local Oracle browser workflow for GPT/ChatGPT second opinions. Do not use API mode unless the user explicitly asks for API or browser mode is blocked.
+- Existing-chat policy: use project-specific `.oracle/config.json` `browser.conversationUrl` or `--chatgpt-conversation-url` when preserving context matters. Do not reuse one project's conversation URL for another project.
+- Model policy: if the user names a model, pass it with `--model <name>` and use `--browser-model-strategy select` by default. Existing conversation reuse still honors model selection before submitting the prompt.
 
 ## Golden path (fast + reliable)
 
@@ -42,6 +45,10 @@ Recommended defaults:
 
 - Browser run (main path; long-running is normal):
   - `npx -y @steipete/oracle --engine browser --model gpt-5.5-pro -p "<task>" --file "src/**"`
+
+- Browser run that reuses a project-specific ChatGPT conversation:
+  - `npx -y @steipete/oracle --engine browser --chatgpt-conversation-url "https://chatgpt.com/c/<thread-id>" -p "<task>" --file "src/**"`
+  - Prefer this when the user wants to preserve an existing ChatGPT thread's context. Use a different conversation URL per project. Oracle verifies prior turns before submitting and fails closed rather than silently creating a fresh chat.
 
 - Manual paste fallback (assemble bundle, copy to clipboard):
   - `npx -y @steipete/oracle --render --copy -p "<task>" --file "src/**"`

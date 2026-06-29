@@ -71,4 +71,12 @@ describe("browser automation expressions", () => {
     expect(expression).toContain("text.length > 0");
     expect(expression).toContain("textPrefix.length > 0");
   });
+
+  test("user-turn attachment expression recognizes localized attachment UI labels", () => {
+    const expression = buildUserTurnAttachmentExpressionForTest({
+      expectedPromptPrefix: "localized upload prompt",
+    });
+    expect(expression).toContain("\\u30d5\\u30a1\\u30a4\\u30eb");
+    expect(expression).toContain("\\u6dfb\\u4ed8");
+  });
 });

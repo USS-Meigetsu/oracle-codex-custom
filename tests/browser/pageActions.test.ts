@@ -1622,6 +1622,9 @@ describe("waitForAttachmentVisible", () => {
     expect(capturedExpression).toContain("source: 'file-input'");
     expect(capturedExpression).toContain('input[type="file"]');
     expect(capturedExpression).toContain("attachments?");
+    expect(capturedExpression).toContain("\\u30d5\\u30a1\\u30a4\\u30eb");
+    expect(capturedExpression).toContain("\\u6dfb\\u4ed8");
+    expect(capturedExpression).toContain("\\u524a\\u9664");
   });
 });
 
